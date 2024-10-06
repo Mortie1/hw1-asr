@@ -1,5 +1,5 @@
 _target_: src.model.DeepSpeech2Model
-n_feats: 128
+n_feats: 160
 conv_channels: 32
 n_rnn_layers: 5
 rnn_hidden_size: 800

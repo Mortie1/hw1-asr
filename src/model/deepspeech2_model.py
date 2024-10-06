@@ -1,5 +1,5 @@
 import math
-from typing import List
+from typing import List, Tuple
 
 import torch
 from torch import BoolTensor, Tensor, nn
@@ -42,7 +42,6 @@ class BatchRNN(nn.Module):
             input_size=input_size,
             hidden_size=hidden_size,
             bidirectional=bidirectional,
-            num_layers=1,
             dropout=dropout,
         )
         self.bidirectional = bidirectional
@@ -52,13 +51,13 @@ class BatchRNN(nn.Module):
         x = nn.utils.rnn.pack_padded_sequence(
             x, lengths, batch_first=True, enforce_sorted=False
         )
-        x, h = self.rnn(x, h)
+        x, _ = self.rnn(x)
         x, _ = nn.utils.rnn.pad_packed_sequence(x, batch_first=True)
         sizes = x.size()
         if self.bidirectional:
             x = x.view(sizes[0], sizes[1], 2, -1).sum(2).view(sizes[0], sizes[1], -1)
 
-        return x, h
+        return x
 
 
 class DeepSpeech2Model(nn.Module):
@@ -98,7 +97,7 @@ class DeepSpeech2Model(nn.Module):
                     padding=(20, 5),
                 ),
                 nn.BatchNorm2d(32),
-                nn.ReLU(inplace=True),
+                nn.Hardtanh(0, 20, inplace=True),
                 nn.Conv2d(
                     in_channels=conv_channels,
                     out_channels=conv_channels,
@@ -107,11 +106,13 @@ class DeepSpeech2Model(nn.Module):
                     padding=(10, 5),
                 ),
                 nn.BatchNorm2d(32),
-                nn.ReLU(inplace=True),
+                nn.Hardtanh(0, 20, inplace=True),
             )
         )
 
-        self.n_feats = math.floor((n_feats + 3) / 4) * 32
+        self.n_feats = math.floor((n_feats + 1) / 2)
+        self.n_feats = math.floor((self.n_feats + 1) / 2)
+        self.n_feats *= 32
 
         self.rnn = nn.Sequential(
             BatchRNN(

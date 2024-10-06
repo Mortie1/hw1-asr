@@ -11,3 +11,4 @@ inference:
     get_spectrogram:
         _target_: src.transforms.LogMelSpec
         sample_rate: 16000
+        n_mels: 160

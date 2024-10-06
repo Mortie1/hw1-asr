@@ -8,10 +8,10 @@ defaults:
     - _self_
 optimizer:
     _target_: torch.optim.AdamW
-    lr: 3e-6
+    lr: 1e-3
 lr_scheduler:
     _target_: torch.optim.lr_scheduler.ExponentialLR
-    gamma: 0.999
+    gamma: 0.995
 warmup_scheduler:
     _target_: torch.optim.lr_scheduler.LinearLR
     start_factor: 0.01
