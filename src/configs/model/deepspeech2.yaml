@@ -2,10 +2,10 @@ _target_: src.model.DeepSpeech2Model
 n_feats: 160
 conv_channels: 32
 n_rnn_layers: 5
-rnn_hidden_size: 800
+rnn_hidden_size: 512
 rnn_type:
     _target_: hydra.utils.get_class
     path: torch.nn.GRU
 rnn_bidirectional: True
-rnn_dropout: 0.0
-fc_hidden_size: 1600
+rnn_dropout: 0.1
+fc_hidden_size: 1024

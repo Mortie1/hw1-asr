@@ -97,7 +97,7 @@ class DeepSpeech2Model(nn.Module):
                     padding=(20, 5),
                 ),
                 nn.BatchNorm2d(32),
-                nn.Hardtanh(0, 20, inplace=True),
+                nn.ReLU(inplace=True),
                 nn.Conv2d(
                     in_channels=conv_channels,
                     out_channels=conv_channels,
@@ -106,13 +106,13 @@ class DeepSpeech2Model(nn.Module):
                     padding=(10, 5),
                 ),
                 nn.BatchNorm2d(32),
-                nn.Hardtanh(0, 20, inplace=True),
+                nn.ReLU(inplace=True),
             )
         )
 
         self.n_feats = math.floor((n_feats + 1) / 2)
         self.n_feats = math.floor((self.n_feats + 1) / 2)
-        self.n_feats *= 32
+        self.n_feats *= conv_channels
 
         self.rnn = nn.Sequential(
             BatchRNN(
