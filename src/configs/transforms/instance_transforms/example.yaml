@@ -3,12 +3,21 @@ train:
         _target_: src.transforms.LogMelSpec
         sample_rate: 16000
         n_mels: 160
+        n_fft: 400
+        window_fn:
+            _target_: hydra.utils.get_method
+            path: torch.hann_window
     audio: # name of the tensor on which we apply transform
         _target_: torchvision.transforms.v2.Compose
         transforms:
             - _target_: src.transforms.wav_augs.Gain
+              p: 0.1
 inference:
     get_spectrogram:
         _target_: src.transforms.LogMelSpec
         sample_rate: 16000
         n_mels: 160
+        n_fft: 400
+        window_fn:
+            _target_: hydra.utils.get_method
+            path: torch.hann_window

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+import torch
 
 from src.logger.utils import plot_spectrogram
 from src.metrics.tracker import MetricTracker
@@ -13,7 +14,7 @@ class Trainer(BaseTrainer):
     Trainer class. Defines the logic of batch logging and processing.
     """
 
-    def process_batch(self, batch, metrics: MetricTracker):
+    def process_batch(self, batch, metrics: MetricTracker, do_step=True):
         """
         Run batch through the model, compute metrics, compute loss,
         and do training step (during training stage).
@@ -38,7 +39,8 @@ class Trainer(BaseTrainer):
         metric_funcs = self.metrics["inference"]
         if self.is_train:
             metric_funcs = self.metrics["train"]
-            self.optimizer.zero_grad()
+            if do_step:
+                self.optimizer.zero_grad()
 
         outputs = self.model(**batch)
         batch.update(outputs)
@@ -49,7 +51,8 @@ class Trainer(BaseTrainer):
         if self.is_train:
             batch["loss"].backward()  # sum of all losses is always called loss
             self._clip_grad_norm()
-            self.optimizer.step()
+            if do_step:
+                self.optimizer.step()
             if self.lr_scheduler is not None:
                 self.lr_scheduler.step()
 
@@ -90,11 +93,28 @@ class Trainer(BaseTrainer):
         self.writer.add_image("spectrogram", image)
 
     def log_predictions(
-        self, text, log_probs, log_probs_length, audio_path, examples_to_log=10, **batch
+        self,
+        text,
+        log_probs: torch.Tensor,
+        log_probs_length,
+        audio_path,
+        examples_to_log=10,
+        **batch
     ):
         # TODO add beam search
         # Note: by improving text encoder and metrics design
         # this logging can also be improved significantly
+
+        probs = log_probs.exp()
+        probs = probs.mean(dim=(0, 1))
+        print(
+            "\n".join(
+                [
+                    self.text_encoder.ind2char[i] + ": " + str(probs[i].item())
+                    for i in range(probs.shape[0])
+                ]
+            )
+        )
 
         argmax_inds = log_probs.cpu().argmax(-1).numpy()
         argmax_inds = [

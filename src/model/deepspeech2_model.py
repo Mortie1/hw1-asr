@@ -107,12 +107,22 @@ class DeepSpeech2Model(nn.Module):
                 ),
                 nn.BatchNorm2d(32),
                 nn.ReLU(inplace=True),
+                nn.Conv2d(
+                    in_channels=conv_channels,
+                    out_channels=conv_channels * 2,
+                    kernel_size=(21, 11),
+                    stride=(2, 1),
+                    padding=(10, 5),
+                ),
+                nn.BatchNorm2d(64),
+                nn.ReLU(inplace=True),
             )
         )
 
         self.n_feats = math.floor((n_feats + 1) / 2)
         self.n_feats = math.floor((self.n_feats + 1) / 2)
-        self.n_feats *= conv_channels
+        self.n_feats = math.floor((self.n_feats + 1) / 2)
+        self.n_feats *= conv_channels * 2
 
         self.rnn = nn.Sequential(
             BatchRNN(
@@ -136,6 +146,9 @@ class DeepSpeech2Model(nn.Module):
 
         self.fc = nn.Sequential(
             nn.Linear(rnn_hidden_size, fc_hidden_size),
+            nn.ReLU(inplace=True),
+            nn.Linear(fc_hidden_size, fc_hidden_size),
+            nn.ReLU(inplace=True),
             nn.Linear(fc_hidden_size, n_tokens),
         )
 
@@ -154,7 +167,7 @@ class DeepSpeech2Model(nn.Module):
         x = self.conv(spectrogram, spectrogram_length)
         x = x.view(x.size()[0], x.size()[3], -1)  # BxTxC
 
-        spectrogram_length = torch.floor_((spectrogram_length + 1) / 2).int()
+        spectrogram_length = self.transform_input_lengths(spectrogram_length)
 
         for layer in self.rnn:
             x = layer(x, spectrogram_length)
@@ -162,7 +175,7 @@ class DeepSpeech2Model(nn.Module):
         output = self.fc(x)
 
         log_probs = nn.functional.log_softmax(output, dim=-1)
-        log_probs_length = self.transform_input_lengths(spectrogram_length)
+        log_probs_length = spectrogram_length
         return {"log_probs": log_probs, "log_probs_length": log_probs_length}
 
     def transform_input_lengths(self, input_lengths):
@@ -175,7 +188,7 @@ class DeepSpeech2Model(nn.Module):
         Returns:
             output_lengths (Tensor): new temporal lengths
         """
-        return input_lengths  # we don't reduce time dimension here
+        return torch.floor_((input_lengths + 1) / 2).int()
 
     def __str__(self):
         """

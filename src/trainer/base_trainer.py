@@ -31,6 +31,7 @@ class BaseTrainer:
         epoch_len=None,
         skip_oom=True,
         batch_transforms=None,
+        n_gradient_accumulation_steps=1,
     ):
         """
         Args:
@@ -74,6 +75,8 @@ class BaseTrainer:
         self.lr_scheduler = lr_scheduler
         self.text_encoder = text_encoder
         self.batch_transforms = batch_transforms
+
+        self.n_gradient_accumulation_steps = n_gradient_accumulation_steps
 
         # define dataloaders
         self.train_dataloader = dataloaders["train"]
@@ -212,6 +215,8 @@ class BaseTrainer:
                 batch = self.process_batch(
                     batch,
                     metrics=self.train_metrics,
+                    do_step=((batch_idx + 1) % self.n_gradient_accumulation_steps == 0)
+                    or (batch_idx + 1 == len(self.train_dataloader)),
                 )
             except torch.cuda.OutOfMemoryError as e:
                 if self.skip_oom:

@@ -1,7 +1,7 @@
 _target_: src.model.DeepSpeech2Model
 n_feats: 160
 conv_channels: 32
-n_rnn_layers: 5
+n_rnn_layers: 4
 rnn_hidden_size: 512
 rnn_type:
     _target_: hydra.utils.get_class
