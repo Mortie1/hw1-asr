@@ -11,9 +11,9 @@ class CTCLossWrapper(CTCLoss):
 
         loss = super().forward(
             log_probs=log_probs_t,
-            targets=text_encoded,
-            input_lengths=log_probs_length,
-            target_lengths=text_encoded_length,
+            targets=text_encoded.cpu(),
+            input_lengths=log_probs_length.cpu(),
+            target_lengths=text_encoded_length.cpu(),
         )
 
         return {"loss": loss}

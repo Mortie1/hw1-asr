@@ -5,7 +5,7 @@ n_rnn_layers: 4
 rnn_hidden_size: 512
 rnn_type:
     _target_: hydra.utils.get_class
-    path: torch.nn.GRU
+    path: torch.nn.LSTM
 rnn_bidirectional: True
 rnn_dropout: 0.1
 fc_hidden_size: 1024

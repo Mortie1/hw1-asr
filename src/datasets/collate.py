@@ -50,11 +50,11 @@ def collate_fn(dataset_items: list[dict]):
             "text_encoded"
         ]
 
-    batch["text_encoded_length"] = torch.IntTensor(
-        [dataset_item["text_encoded"].shape[1] for dataset_item in dataset_items]
-    )
-    batch["spectrogram_length"] = torch.IntTensor(
-        [dataset_item["spectrogram"].shape[2] for dataset_item in dataset_items]
-    )
+    batch["text_encoded_length"] = torch.Tensor(
+        [item["text_encoded"].shape[1] for item in dataset_items]
+    ).int()
+    batch["spectrogram_length"] = torch.Tensor(
+        [item["spectrogram"].shape[2] for item in dataset_items]
+    ).int()
 
     return batch

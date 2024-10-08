@@ -112,3 +112,6 @@ outputs/
 .vscode/
 .idea/
 __MACOSX/
+
+# debugging files
+torch_deepspeech.*

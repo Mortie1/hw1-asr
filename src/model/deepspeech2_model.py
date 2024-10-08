@@ -44,15 +44,14 @@ class BatchRNN(nn.Module):
             bidirectional=bidirectional,
             dropout=dropout,
         )
+        self.batch_norm = nn.BatchNorm1d(input_size)
         self.bidirectional = bidirectional
 
-    def forward(self, x: Tensor, lengths: Tensor, h: Tensor = None) -> Tensor:
-        x = self.batch_norm(x.transpose(1, 2)).transpose(1, 2)  # BxTxC
-        x = nn.utils.rnn.pack_padded_sequence(
-            x, lengths, batch_first=True, enforce_sorted=False
-        )
+    def forward(self, x: Tensor, lengths: Tensor) -> Tensor:
+        x = self.batch_norm(x.permute(1, 2, 0)).permute(2, 0, 1)  # TxBxC
+        x = nn.utils.rnn.pack_padded_sequence(x, lengths, enforce_sorted=False)
         x, _ = self.rnn(x)
-        x, _ = nn.utils.rnn.pad_packed_sequence(x, batch_first=True)
+        x, _ = nn.utils.rnn.pad_packed_sequence(x)
         sizes = x.size()
         if self.bidirectional:
             x = x.view(sizes[0], sizes[1], 2, -1).sum(2).view(sizes[0], sizes[1], -1)
@@ -107,22 +106,22 @@ class DeepSpeech2Model(nn.Module):
                 ),
                 nn.BatchNorm2d(32),
                 nn.ReLU(inplace=True),
-                nn.Conv2d(
-                    in_channels=conv_channels,
-                    out_channels=conv_channels * 2,
-                    kernel_size=(21, 11),
-                    stride=(2, 1),
-                    padding=(10, 5),
-                ),
-                nn.BatchNorm2d(64),
-                nn.ReLU(inplace=True),
+                # nn.Conv2d(
+                #     in_channels=conv_channels,
+                #     out_channels=conv_channels * 2,
+                #     kernel_size=(21, 11),
+                #     stride=(2, 1),
+                #     padding=(10, 5),
+                # ),
+                # nn.BatchNorm2d(64),
+                # nn.ReLU(inplace=True),
             )
         )
 
         self.n_feats = math.floor((n_feats + 1) / 2)
         self.n_feats = math.floor((self.n_feats + 1) / 2)
-        self.n_feats = math.floor((self.n_feats + 1) / 2)
-        self.n_feats *= conv_channels * 2
+        # self.n_feats = math.floor((self.n_feats + 1) / 2)
+        self.n_feats *= conv_channels  # * 2
 
         self.rnn = nn.Sequential(
             BatchRNN(
@@ -143,9 +142,9 @@ class DeepSpeech2Model(nn.Module):
                 for _ in range(n_rnn_layers - 1)
             ],
         )
-
+        self.fc_batchnorm = nn.BatchNorm1d(rnn_hidden_size)
         self.fc = nn.Sequential(
-            nn.Linear(rnn_hidden_size, fc_hidden_size),
+            nn.Linear(rnn_hidden_size, fc_hidden_size),  # turn off bias
             nn.ReLU(inplace=True),
             nn.Linear(fc_hidden_size, fc_hidden_size),
             nn.ReLU(inplace=True),
@@ -163,22 +162,26 @@ class DeepSpeech2Model(nn.Module):
             output (dict): output dict containing log_probs and
                 transformed lengths.
         """
-        spectrogram = spectrogram[:, None, :, :]
-        x = self.conv(spectrogram, spectrogram_length)
-        x = x.view(x.size()[0], x.size()[3], -1)  # BxTxC
-
-        spectrogram_length = self.transform_input_lengths(spectrogram_length)
+        spectrogram = spectrogram[:, None, :, :]  # Bx1xDxT
+        spectrogram_length = self.transform_input_lengths(
+            spectrogram_length.cpu().int()
+        )
+        x = self.conv(spectrogram, spectrogram_length)  # BxCxDxT
+        sizes = x.size()
+        x = x.view(sizes[0], -1, sizes[3])
+        x = x.transpose(1, 2).transpose(0, 1).contiguous()  # TxBxC
 
         for layer in self.rnn:
-            x = layer(x, spectrogram_length)
+            x = layer(x, spectrogram_length)  # TxBxC
 
+        x = self.fc_batchnorm(x.permute(1, 2, 0)).permute(0, 2, 1)  # BxTxC
         output = self.fc(x)
 
         log_probs = nn.functional.log_softmax(output, dim=-1)
         log_probs_length = spectrogram_length
         return {"log_probs": log_probs, "log_probs_length": log_probs_length}
 
-    def transform_input_lengths(self, input_lengths):
+    def transform_input_lengths(self, input_lengths: Tensor):
         """
         As the network may compress the Time dimension, we need to know
         what are the new temporal lengths after compression.
@@ -188,7 +191,16 @@ class DeepSpeech2Model(nn.Module):
         Returns:
             output_lengths (Tensor): new temporal lengths
         """
-        return torch.floor_((input_lengths + 1) / 2).int()
+        seq_len = input_lengths
+        for m in self.conv.modules():
+            if type(m) == nn.modules.conv.Conv2d:
+                seq_len = (
+                    seq_len
+                    + 2 * m.padding[1]
+                    - m.dilation[1] * (m.kernel_size[1] - 1)
+                    - 1
+                ) // m.stride[1] + 1
+        return seq_len.int()
 
     def __str__(self):
         """
