@@ -11,7 +11,33 @@ train:
         _target_: torchvision.transforms.v2.Compose
         transforms:
             - _target_: src.transforms.wav_augs.Gain
-              p: 0.1
+              min_gain_in_db: -2
+              max_gain_in_db: 6
+              p: 0.3
+            - _target_: src.transforms.wav_augs.ColoredNoise
+              min_snr_in_db: 15
+              max_snr_in_db: 18
+              p: 0.5
+              sample_rate: 16000
+            - _target_: src.transforms.wav_augs.PitchShift
+              min_transpose_semitones: -3.0
+              max_transpose_semitones: 3.0
+              sample_rate: 16000
+              p: 0.3
+            - _target_: src.transforms.wav_augs.BandStopFilter
+              min_bandwidth_fraction: 0.4
+              max_bandwidth_fraction: 0.6
+              min_center_frequency: 200
+              max_center_frequency: 4000
+              sample_rate: 16000
+              p: 0.2
+            - _target_: src.transforms.wav_augs.BandPassFilter
+              sample_rate: 16000
+              min_bandwidth_fraction: 1.5
+              max_bandwidth_fraction: 1.99
+              min_center_frequency: 1500
+              max_center_frequency: 4000
+              p: 0.3
 inference:
     get_spectrogram:
         _target_: src.transforms.LogMelSpec

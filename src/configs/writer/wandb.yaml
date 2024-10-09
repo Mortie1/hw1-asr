@@ -1,8 +1,9 @@
 _target_: src.logger.WandBWriter
 project_name: "hw1_asr"
 entity: null
-run_name: "finally fixed!!! train_all, no augs"
-mode: "offline"
+run_name: "+lr, -lr decaying, +batch size (grad accum)"
+mode: "online"
 loss_names: ["loss"] # which losses to log (useful for multi-loss tasks, s.a. GANs)
 log_checkpoints: False # set to True if you want to log save_dir with checkpoints to W&B
 id_length: 8 # length of the run_id
+audio_sample_rate: 16000

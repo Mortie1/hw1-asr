@@ -84,11 +84,9 @@ class BaseDataset(Dataset):
         text = data_dict["text"]
         text_encoded = self.text_encoder.encode(text)
 
-        spectrogram = self.get_spectrogram(audio)
-
         instance_data = {
             "audio": audio,
-            "spectrogram": spectrogram,
+            "spectrogram": None,  # will extract spectrogram and apply transforms in preprocess_data
             "text": text,
             "text_encoded": text_encoded,
             "audio_path": audio_path,
@@ -143,11 +141,24 @@ class BaseDataset(Dataset):
         """
         if self.instance_transforms is not None:
             for transform_name in self.instance_transforms.keys():
-                if transform_name == "get_spectrogram":
+                if (
+                    transform_name == "get_spectrogram"
+                    or transform_name == "spectrogram"
+                ):
                     continue  # skip special key
                 instance_data[transform_name] = self.instance_transforms[
                     transform_name
                 ](instance_data[transform_name])
+
+        instance_data["spectrogram"] = self.get_spectrogram(instance_data["audio"])
+
+        if (
+            self.instance_transforms is not None
+            and "spectrogram" in self.instance_transforms
+        ):
+            instance_data["spectrogram"] = self.instance_transforms["spectrogram"](
+                instance_data["spectrogram"]
+            )
         return instance_data
 
     @staticmethod
