@@ -114,15 +114,6 @@ class Trainer(BaseTrainer):
         # this logging can also be improved significantly
 
         probs = log_probs.exp()
-        probs = probs.mean(dim=(0, 1))
-        print(
-            "\n".join(
-                [
-                    self.text_encoder.ind2char[i] + ": " + str(probs[i].item())
-                    for i in range(probs.shape[0])
-                ]
-            )
-        )
 
         argmax_inds = log_probs.cpu().argmax(-1).numpy()
         argmax_inds = [
@@ -131,20 +122,32 @@ class Trainer(BaseTrainer):
         ]
         argmax_texts_raw = [self.text_encoder.decode(inds) for inds in argmax_inds]
         argmax_texts = [self.text_encoder.ctc_decode(inds) for inds in argmax_inds]
-        tuples = list(zip(argmax_texts, text, argmax_texts_raw, audio_path))
+        beam_texts = [
+            self.text_encoder.ctc_beamsearch(
+                prob, beam_size=self.config.trainer.beam_size
+            )
+            for prob in probs
+        ]
+        tuples = list(zip(argmax_texts, text, argmax_texts_raw, audio_path, beam_texts))
 
         rows = {}
-        for pred, target, raw_pred, audio_path in tuples[:examples_to_log]:
+        for pred, target, raw_pred, audio_path, beam_pred in tuples[:examples_to_log]:
             target = self.text_encoder.normalize_text(target)
-            wer = calc_wer(target, pred) * 100
-            cer = calc_cer(target, pred) * 100
+            argmax_wer = calc_wer(target, pred) * 100
+            argmax_cer = calc_cer(target, pred) * 100
+
+            beam_wer = calc_wer(target, beam_pred) * 100
+            beam_cer = calc_cer(target, beam_pred) * 100
 
             rows[Path(audio_path).name] = {
                 "target": target,
                 "raw prediction": raw_pred,
-                "predictions": pred,
-                "wer": wer,
-                "cer": cer,
+                "argmax_predictions": pred,
+                "beam_predictions": beam_pred,
+                "argmax_wer": argmax_wer,
+                "argmax_cer": argmax_cer,
+                "beam_wer": beam_wer,
+                "beam_cer": beam_cer,
             }
         self.writer.add_table(
             "predictions", pd.DataFrame.from_dict(rows, orient="index")

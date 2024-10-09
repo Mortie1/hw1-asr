@@ -1,4 +1,5 @@
 import re
+from collections import defaultdict
 from string import ascii_lowercase
 
 import torch
@@ -73,6 +74,40 @@ class CTCTextEncoder:
                 if len(decoded_text) == 0 or decoded_text[-1] != ind:
                     decoded_text.append(ind)
         return "".join([self.ind2char[int(ind)] for ind in decoded_text])
+
+    def ctc_beamsearch(self, probs, beam_size):
+        # code from seminar
+        def truncate_paths(dp, beam_size):
+            return dict(
+                sorted(list(dp.items()), key=lambda x: x[1], reverse=True)[:beam_size]
+            )
+
+        def expand_and_merge_paths(dp, next_token_probs):
+            new_dp = defaultdict(float)
+            for ind, next_token_prob in enumerate(next_token_probs):
+                cur_char = self.ind2char[ind]
+                for (prefix, last_char), v in dp.items():
+                    if last_char == cur_char:
+                        new_prefix = prefix
+                    else:
+                        if cur_char != self.EMPTY_TOK:
+                            new_prefix = prefix + cur_char
+                        else:
+                            new_prefix = prefix
+                    new_dp[(new_prefix, cur_char)] += v * next_token_prob
+            return new_dp
+
+        dp = {("", self.EMPTY_TOK): 1.0}
+        for prob in probs:
+            dp = expand_and_merge_paths(dp, prob)
+            dp = truncate_paths(dp, beam_size)
+        result = [
+            (prefix, proba)
+            for (prefix, _), proba in sorted(
+                dp.items(), key=lambda x: x[1], reverse=True
+            )
+        ][0][0]
+        return result
 
     @staticmethod
     def normalize_text(text: str):

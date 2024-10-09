@@ -1,7 +1,7 @@
 _target_: src.logger.WandBWriter
 project_name: "hw1_asr"
 entity: null
-run_name: "+lr, -lr decaying, +batch size (grad accum)"
+run_name: "run to check if beam search works"
 mode: "online"
 loss_names: ["loss"] # which losses to log (useful for multi-loss tasks, s.a. GANs)
 log_checkpoints: False # set to True if you want to log save_dir with checkpoints to W&B
