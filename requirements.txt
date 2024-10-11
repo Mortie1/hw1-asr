@@ -1,6 +1,6 @@
-torch==2.2.0
-torchvision==0.17.0
-torchaudio==2.2.0
+torch==2.4.1
+torchvision==0.19.1
+torchaudio==2.4.1
 soundfile
 numpy==1.26.4
 torch_audiomentations
@@ -13,6 +13,11 @@ hydra-core
 datasets
 wget
 editdistance
+flashlight-text
+
+
+# kenlm
+https://github.com/kpu/kenlm/archive/master.zip
 
 black
 isort

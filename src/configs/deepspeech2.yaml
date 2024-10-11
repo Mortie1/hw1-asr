@@ -2,7 +2,7 @@ defaults:
     - model: deepspeech2
     - writer: wandb
     - metrics: example
-    - datasets: short
+    - datasets: example
     - dataloader: example
     - transforms: example_only_instance
     - _self_
@@ -24,10 +24,10 @@ text_encoder:
 trainer:
     log_step: 20
     n_epochs: 50
-    epoch_len: 1
+    epoch_len: 400
     device_tensors: ["spectrogram", "text_encoded"] # which tensors should be on device (ex. GPU)
     resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
-    from_pretrained: D:\hse\DLA\hw1-asr\saved\finally fixed!!! train_all, no augs\checkpoint-epoch12.pth
+    # from_pretrained: D:\hse\DLA\hw1-asr\saved\finally fixed!!! train_all, no augs\checkpoint-epoch12.pth
     device: cuda # device name or "auto"
     override: True # if True, will override the previous run with the same name
     monitor: "min val_WER_(Argmax)" # "off" or "max/min metric_name", i.e. our goal is to maximize/minimize metric
@@ -36,4 +36,4 @@ trainer:
     save_dir: "saved"
     seed: 42
     n_gradient_accumulation_steps: 1
-    beam_size: 20
+    beam_size: 25

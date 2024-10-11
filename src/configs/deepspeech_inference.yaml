@@ -1,0 +1,15 @@
+defaults:
+    - model: deepspeech2
+    - metrics: example
+    - datasets: eval # we do not want to run inference on training data
+    - dataloader: example
+    - transforms: example
+    - _self_
+text_encoder:
+    _target_: src.text_encoder.CTCTextEncoder
+inferencer:
+    device_tensors: ["spectrogram", "text_encoded"] # which tensors should be on device (ex. GPU)
+    device: auto # device name or "auto"
+    save_path: "deepspeech2_inference" # any name here, can be a dataset name
+    seed: 42
+    from_pretrained: "saved/same, increased epoch len (val is very long)/model_best.pth" # path to the pretrained model

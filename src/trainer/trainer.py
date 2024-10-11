@@ -104,7 +104,7 @@ class Trainer(BaseTrainer):
         self,
         text,
         log_probs: torch.Tensor,
-        log_probs_length,
+        log_probs_length: torch.Tensor,
         audio_path,
         examples_to_log=10,
         **batch
@@ -113,8 +113,6 @@ class Trainer(BaseTrainer):
         # Note: by improving text encoder and metrics design
         # this logging can also be improved significantly
 
-        probs = log_probs.exp()
-
         argmax_inds = log_probs.cpu().argmax(-1).numpy()
         argmax_inds = [
             inds[: int(ind_len)]
@@ -122,12 +120,9 @@ class Trainer(BaseTrainer):
         ]
         argmax_texts_raw = [self.text_encoder.decode(inds) for inds in argmax_inds]
         argmax_texts = [self.text_encoder.ctc_decode(inds) for inds in argmax_inds]
-        beam_texts = [
-            self.text_encoder.ctc_beamsearch(
-                prob, beam_size=self.config.trainer.beam_size
-            )
-            for prob in probs
-        ]
+
+        beam_texts = self.text_encoder.ctc_beamsearch(log_probs, log_probs_length)
+
         tuples = list(zip(argmax_texts, text, argmax_texts_raw, audio_path, beam_texts))
 
         rows = {}
