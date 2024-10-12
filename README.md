@@ -20,39 +20,39 @@ Follow these steps to install the project:
 
 0. (Optional) Create and activate new environment using [`conda`](https://conda.io/projects/conda/en/latest/user-guide/getting-started.html) or `venv` ([`+pyenv`](https://github.com/pyenv/pyenv)).
 
-   a. `conda` version:
+    a. `conda` version:
 
-   ```bash
-   # create env
-   conda create -n project_env python=PYTHON_VERSION
+    ```bash
+    # create env
+    conda create -n project_env python=PYTHON_VERSION
 
-   # activate env
-   conda activate project_env
-   ```
+    # activate env
+    conda activate project_env
+    ```
 
-   b. `venv` (`+pyenv`) version:
+    b. `venv` (`+pyenv`) version:
 
-   ```bash
-   # create env
-   ~/.pyenv/versions/PYTHON_VERSION/bin/python3 -m venv project_env
+    ```bash
+    # create env
+    ~/.pyenv/versions/PYTHON_VERSION/bin/python3 -m venv project_env
 
-   # alternatively, using default python version
-   python3 -m venv project_env
+    # alternatively, using default python version
+    python3 -m venv project_env
 
-   # activate env
-   source project_env
-   ```
+    # activate env
+    source project_env
+    ```
 
 1. Install all required packages
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+    ```bash
+    pip install -r requirements.txt
+    ```
 
 2. Install `pre-commit`:
-   ```bash
-   pre-commit install
-   ```
+    ```bash
+    pre-commit install
+    ```
 
 ## How To Use
 
@@ -67,8 +67,24 @@ Where `CONFIG_NAME` is a config from `src/configs` and `HYDRA_CONFIG_ARGUMENTS` 
 To run inference (evaluate the model or save predictions):
 
 ```bash
-python3 inference.py HYDRA_CONFIG_ARGUMENTS
+python3 inference.py -cn=CONFIG_NAME HYDRA_CONFIG_ARGUMENTS
 ```
+
+## Using my best model
+
+[W&B logs of best model](https://wandb.ai/max23-ost/hw1_asr/runs/pi32wbk2)
+
+Script for downloading my final model:
+
+```bash
+gdown https://drive.google.com/uc?id=1x5uSWegqLKRwY_zHl3xmbD8SpZtHEeBX
+```
+
+Change `from_pretrained` path in `src/configs/deepspeech_inference` to match downloaded file's location.
+
+Config for training final model: `src/configs/deepspeech2.yaml`
+
+Config for inferencing / testing final model: `src/configs/deepspeech_inference.yaml`
 
 ## Credits
 
