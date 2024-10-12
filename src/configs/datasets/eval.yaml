@@ -1,10 +1,8 @@
 val:
     _target_: src.datasets.LibrispeechDataset
-    part: "dev-other"
-    limit: 500
+    part: "dev-clean"
     instance_transforms: ${transforms.instance_transforms.inference}
 test:
     _target_: src.datasets.LibrispeechDataset
-    part: "test-other"
-    limit: 500
+    part: "test-clean"
     instance_transforms: ${transforms.instance_transforms.inference}
