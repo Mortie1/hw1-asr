@@ -2,13 +2,13 @@ defaults:
     - model: deepspeech2
     - writer: wandb
     - metrics: example
-    - datasets: example
+    - datasets: common_voice
     - dataloader: example
-    - transforms: example_only_instance
+    - transforms: other
     - _self_
 optimizer:
     _target_: torch.optim.Adam
-    lr: 1e-4
+    lr: 1e-3
 lr_scheduler:
     _target_: torch.optim.lr_scheduler.ExponentialLR
     gamma: 0.9995
@@ -23,11 +23,11 @@ text_encoder:
     _target_: src.text_encoder.CTCTextEncoder
 trainer:
     log_step: 20
-    n_epochs: 50
+    n_epochs: 10
     epoch_len: 400
     device_tensors: ["spectrogram", "text_encoded"] # which tensors should be on device (ex. GPU)
     resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
-    from_pretrained: D:\hse\DLA\hw1-asr\saved\same, increased epoch len (val is very long)\model_best.pth
+    from_pretrained: D:\hse\DLA\hw1-asr\saved\rerun last experiment fixed\model_best.pth
     device: cuda # device name or "auto"
     override: False # if True, will override the previous run with the same name
     monitor: "min val_WER_(Beam)" # "off" or "max/min metric_name", i.e. our goal is to maximize/minimize metric

@@ -25,7 +25,7 @@ bsdecoder = ctc_decoder(
     tokens=[""] + list(ascii_lowercase + " ") + ["|", "<unk>"],
     beam_size=50,
     # lm=download_pretrained_files("librispeech-3-gram").lm,
-    # lm="3-gram.pruned.3e-7.arpa",
+    lm="D:\\hse\\DLA\\hw1-asr\\src\\text_encoder\\3-gram-librispeech.bin",
     blank_token="",
 )
 
@@ -39,7 +39,9 @@ cuda_decoder = cuda_ctc_decoder(
 class CTCTextEncoder:
     EMPTY_TOK = ""
 
-    def __init__(self, alphabet=None, beam_size: int = 50, **kwargs):
+    def __init__(
+        self, alphabet=None, beam_size: int = 50, use_lm: bool = False, **kwargs
+    ):
         """
         Args:
             alphabet (list): alphabet for language. If None, it will be
@@ -51,6 +53,8 @@ class CTCTextEncoder:
 
         self.alphabet = alphabet
         self.vocab = [self.EMPTY_TOK] + list(self.alphabet)
+
+        self.use_lm = use_lm
 
         # self.bsdecoder = ctc_decoder(
         #     lexicon=None,
@@ -159,10 +163,23 @@ class CTCTextEncoder:
         #     torch.nn.functional.pad(log_probs.cpu(), (0, 2), "constant", -1e9),
         #     log_probs_lengths,
         # )
-        lm_preds = cuda_decoder(log_probs, log_probs_lengths)
+        if self.use_lm:
+            lm_preds = bsdecoder(
+                log_probs.cpu(),
+                log_probs_lengths.cpu(),
+            )
+        else:
+            lm_preds = cuda_decoder(log_probs, log_probs_lengths)
+
         lm_preds = [
             "".join(
                 bsdecoder.idxs_to_tokens(
+                    torch.as_tensor(
+                        max(preds_list, key=lambda x: x.score).tokens
+                    ).long()
+                )[1:-1]
+                if self.use_lm
+                else bsdecoder.idxs_to_tokens(
                     torch.as_tensor(
                         max(preds_list, key=lambda x: x.score).tokens
                     ).long()

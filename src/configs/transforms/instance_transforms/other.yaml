@@ -1,0 +1,49 @@
+train:
+    get_spectrogram: # special key for getting spectrogram
+        _target_: src.transforms.LogMelSpec
+        sample_rate: 16000
+        n_mels: 160
+        n_fft: 400
+        window_fn:
+            _target_: hydra.utils.get_method
+            path: torch.hann_window
+    audio: # name of the tensor on which we apply transform
+        _target_: torchvision.transforms.v2.Compose
+        transforms:
+            - _target_: src.transforms.wav_augs.Gain
+              min_gain_in_db: -4
+              max_gain_in_db: 6
+              p: 0.5
+            - _target_: src.transforms.wav_augs.ColoredNoise
+              min_snr_in_db: 10
+              max_snr_in_db: 18
+              p: 0.5
+              sample_rate: 16000
+            - _target_: src.transforms.wav_augs.PitchShift
+              min_transpose_semitones: -3.0
+              max_transpose_semitones: 3.0
+              sample_rate: 16000
+              p: 0.5
+            - _target_: src.transforms.wav_augs.BandStopFilter
+              min_bandwidth_fraction: 0.4
+              max_bandwidth_fraction: 0.7
+              min_center_frequency: 200
+              max_center_frequency: 4000
+              sample_rate: 16000
+              p: 0.4
+            - _target_: src.transforms.wav_augs.BandPassFilter
+              sample_rate: 16000
+              min_bandwidth_fraction: 1.5
+              max_bandwidth_fraction: 1.99
+              min_center_frequency: 1500
+              max_center_frequency: 4000
+              p: 0.4
+inference:
+    get_spectrogram:
+        _target_: src.transforms.LogMelSpec
+        sample_rate: 16000
+        n_mels: 160
+        n_fft: 400
+        window_fn:
+            _target_: hydra.utils.get_method
+            path: torch.hann_window

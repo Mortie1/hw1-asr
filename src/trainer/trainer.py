@@ -121,7 +121,9 @@ class Trainer(BaseTrainer):
         argmax_texts_raw = [self.text_encoder.decode(inds) for inds in argmax_inds]
         argmax_texts = [self.text_encoder.ctc_decode(inds) for inds in argmax_inds]
 
-        beam_texts = self.text_encoder.ctc_beamsearch(log_probs, log_probs_length)
+        beam_texts = self.text_encoder.ctc_beamsearch(
+            log_probs, log_probs_length.cuda()
+        )
 
         tuples = list(zip(argmax_texts, text, argmax_texts_raw, audio_path, beam_texts))
 

@@ -12,13 +12,14 @@ from src.utils.io_utils import ROOT_PATH
 
 class CommonVoiceDataset(BaseDataset):
     def __init__(self, split, *args, **kwargs):
-        self._data_dir = ROOT_PATH / "dataset_common_voice"
+        self._data_dir = ROOT_PATH / "data" / "datasets" / "dataset_common_voice"
         self._regex = re.compile("[^a-z ]")
         self._dataset = load_dataset(
             "mozilla-foundation/common_voice_11_0",
             "en",
             cache_dir=self._data_dir,
             split=split,
+            trust_remote_code=True,
         )
         index = self._get_or_load_index(split)
         super().__init__(index, *args, **kwargs)
