@@ -1,3 +1,5 @@
+import json
+
 import torch
 from tqdm.auto import tqdm
 
@@ -156,7 +158,16 @@ class Inferencer(BaseTrainer):
 
             if self.save_path is not None:
                 # you can use safetensors or other lib here
-                torch.save(output, self.save_path / part / f"output_{output_id}.pth")
+                # torch.save(output, self.save_path / part / f"output_{output_id}.pth")
+                with open(
+                    str(self.save_path / part / f"output_{output_id}.pth"), "w"
+                ) as f:
+                    json.dump(
+                        output,
+                        f,
+                        ensure_ascii=False,
+                        indent=4,
+                    )
 
         return batch
 
