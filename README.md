@@ -86,6 +86,12 @@ Config for training final model: `src/configs/deepspeech2.yaml`
 
 Config for inferencing / testing final model: `src/configs/deepspeech_inference.yaml`
 
+To get CERs and WERs of predictions vs ground truth texts, use:
+
+```bash
+python3 get_cer_wer.py <path_to_predictions_txt> <path_to_ground_truth_txt>
+```
+
 ## Credits
 
 This repository is based on a [PyTorch Project Template](https://github.com/Blinorot/pytorch_project_template).

@@ -1,4 +1,5 @@
 import json
+import ntpath
 
 import torch
 from tqdm.auto import tqdm
@@ -139,7 +140,6 @@ class Inferencer(BaseTrainer):
         # Use if you need to save predictions on disk
 
         batch_size = batch["log_probs"].shape[0]
-        current_id = batch_idx * batch_size
         preds = self.text_encoder.ctc_beamsearch(
             batch["log_probs"].cuda(), batch["log_probs_length"].cuda()
         )
@@ -148,8 +148,7 @@ class Inferencer(BaseTrainer):
             # clone because of
             # https://github.com/pytorch/pytorch/issues/1995
             pred = preds[i]
-            text = batch["text"][i]
-            output_id = current_id + i
+            text = batch.get("text")[i]
 
             output = {
                 "pred_text": pred,
@@ -157,11 +156,10 @@ class Inferencer(BaseTrainer):
             }
 
             if self.save_path is not None:
+                audio_name = ntpath.basename(batch["audio_path"][i])
                 # you can use safetensors or other lib here
                 # torch.save(output, self.save_path / part / f"output_{output_id}.pth")
-                with open(
-                    str(self.save_path / part / f"output_{output_id}.pth"), "w"
-                ) as f:
+                with open(str(self.save_path / part / audio_name), "w") as f:
                     json.dump(
                         output,
                         f,
